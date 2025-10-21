@@ -3,6 +3,7 @@
   "description": "Add a button next to the activities button to directly open the app grid",
   "uuid": "appgridbuttonintoppanel@raphaelian",
   "shell-version": [
-    "48"
+    "48",
+    "49"
   ]
 }
