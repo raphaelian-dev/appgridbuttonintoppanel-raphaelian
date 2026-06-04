@@ -25,9 +25,9 @@ import St from 'gi://St';
 
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
-import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+import Atk from 'gi://Atk';
 
 function toggleAppGrid() {
     Main.overview.show();
@@ -35,9 +35,13 @@ function toggleAppGrid() {
 }
 
 const Indicator = GObject.registerClass(
-class Indicator extends PanelMenu.Button {
+class AppGridIndicator extends PanelMenu.Button {
     _init() {
-        super._init(0.0, _('My Shiny Indicator'));
+        super._init(0.0, null, true);
+
+        this.set({
+            accessible_role: Atk.Role.TOGGLE_BUTTON,
+        });
 
         this.add_child(new St.Icon({
             icon_name: 'view-app-grid-symbolic',
@@ -54,16 +58,12 @@ class Indicator extends PanelMenu.Button {
                 }
             }, this);
 
-        this.connect("button-press-event", (actor, event) => {
-            toggleAppGrid();
-            return true;
-        });
 
-	    this.connect("touch-event", (actor, event) => {
-		if (event.type() == Clutter.EventType.TOUCH_END)
-			toggleAppGrid();
-		return true;
-	    });
+        this._clickGesture = new Clutter.ClickGesture();
+        this._clickGesture.connect('recognize', () => {
+            toggleAppGrid();
+        });
+        this.add_action(this._clickGesture);
     }
 
 
