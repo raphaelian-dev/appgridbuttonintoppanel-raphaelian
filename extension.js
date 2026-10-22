@@ -30,10 +30,66 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import Atk from 'gi://Atk';
 
 function toggleAppGrid() {
-    Main.overview.show();
-    Main.overview.dash.showAppsButton.checked = !Main.overview.dash.showAppsButton.checked;
+    if (Main.overview.visible) {
+        Main.overview.dash.showAppsButton.checked = !Main.overview.dash.showAppsButton.checked;
+    } else {
+        Main.overview.showApps();
+    }
 }
 
+const Indicator = GObject.registerClass(
+class AppGridIndicator extends PanelMenu.Button {
+    _init() {
+        super._init(0.0, null, true);
+
+        this.set({
+            accessible_role: Atk.Role.TOGGLE_BUTTON,
+        });
+
+        this.add_child(new St.Icon({
+            icon_name: 'view-app-grid-symbolic',
+            style_class: 'system-status-icon',
+        }));
+
+        this._signalId = Main.overview.dash.showAppsButton.connectObject('style_changed',
+            () => {
+                if (Main.overview.dash.showAppsButton.checked) {
+                    this.add_style_pseudo_class('checked');
+                }
+                else {
+                    this.remove_style_pseudo_class('checked');
+                }
+            }, this);
+
+
+        this._clickGesture = new Clutter.ClickGesture();
+        this._clickGesture.connect('recognize', () => {
+            toggleAppGrid();
+        });
+        this.add_action(this._clickGesture);
+    }
+
+
+    destroy() {
+        if (this._signalId) {
+            Main.overview.dash.showAppsButton.disconnect(this._signalId);
+            this._signalId = null;
+        }
+        super.destroy();
+    }
+});
+
+export default class AppGridButtonInTopPanelExtension extends Extension {
+    enable() {
+        this._indicator = new Indicator();
+        Main.panel.addToStatusArea(this.uuid, this._indicator, 1, 'left');
+    }
+
+    disable() {
+        this._indicator.destroy();
+        this._indicator = null;
+    }
+}
 const Indicator = GObject.registerClass(
 class AppGridIndicator extends PanelMenu.Button {
     _init() {
